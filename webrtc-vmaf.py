@@ -129,7 +129,7 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
         '-c:v', # codec will follow
     ]
 
-    # match encoding settings close to what WebRTC requires
+    # match encoding settings to what libwebrtc uses
     # these flags are obtained from libwebrtc source code:
     # https://github.com/webrtc-sdk/webrtc/tree/m104_release/modules/video_coding/codecs
     if codec == 'h264':
