@@ -2,7 +2,7 @@
 
 This tool is designed to perform [VMAF analysis](https://github.com/Netflix/vmaf) for WebRTC video codecs.
 
-WebRTC video, due to its real-time requirements, often does not use certain features of video encoders because of the limited number of frames that can be kept in the encoder's frame buffer. Consequently, video encoded with a low-latency profile usually sacrifices a bit of bitrate efficiency compared to the full potential of the codecs.
+WebRTC video, due to its real-time requirements, is often less efficient compared to the encoder's full potential. Part of the reason is due to the limited number of frames that can be kept in the encoder's frame buffer. As a result, when video is encoded with a low-latency profile, it tends to forgo some bitrate efficiency compared to the maximum capabilities of the codecs.
 
 This presents a dilemma for WebRTC application developers: what bitrates should be used to ensure high-quality encoding?
 
