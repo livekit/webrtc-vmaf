@@ -30,7 +30,7 @@ popd
 mkdir -p sports_1080p
 pushd sports_1080p
 curl https://media.xiph.org/video/derf/y4m/rush_field_cuts_1080p.y4m --output rush_field_cuts_1080p.y4m
-# additionally uses the following clips that are not public domain. please acquire a license to download the files
-#  https://www.storyblocks.com/video/stock/professional-soccer-match-hcd8vkodlk8rlj1vk
-#  https://www.storyblocks.com/video/stock/aldridge-offensive-rebound-and-score-rqbattivuk8rlwcug
+echo 'additionally uses the following clips that are not public domain. please acquire a license to download the files'
+echo '  https://www.storyblocks.com/video/stock/professional-soccer-match-hcd8vkodlk8rlj1vk'
+echo '  https://www.storyblocks.com/video/stock/aldridge-offensive-rebound-and-score-rqbattivuk8rlwcug'
 popd
