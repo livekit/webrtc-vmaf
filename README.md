@@ -53,7 +53,7 @@ You can also pass in multiple bitrate flags for it to compute VMAF scores for th
 ### Using example clips
 
 `download_files.sh` will download about 10GB of source clips from xiph.org. The clips are organized
-in four categories:
+into four categories:
 
 - video conferencing
 - sports
