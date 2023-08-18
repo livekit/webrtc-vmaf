@@ -56,8 +56,10 @@ def vmaf_for_input(input, codec, bitrate, framerate, width=None, height=None):
     os.makedirs('tmp_vmaf', exist_ok=True)
     basename = path.basename(input)
     file_name, _ = path.splitext(basename)
-    video_output = path.join('tmp_vmaf', f'{file_name}_{codec}_{width}x{height}_{bitrate}.mkv')
-    image_output = path.join('tmp_vmaf', f'{file_name}_{codec}_{width}x{height}_{bitrate}.jpeg')
+    video_output = path.join(
+        'tmp_vmaf', f'{file_name}_{codec}_{width}x{height}_{bitrate}.mkv')
+    image_output = path.join(
+        'tmp_vmaf', f'{file_name}_{codec}_{width}x{height}_{bitrate}.jpeg')
 
     start_time = time.time()
     encode_file(input, video_output,
@@ -72,10 +74,10 @@ def vmaf_for_input(input, codec, bitrate, framerate, width=None, height=None):
     capture_snapshot(video_output, image_output)
 
     score = compute_vmaf(input, video_output,
-                 width=width,
-                 height=height,
-                 framerate=framerate,
-                 )
+                         width=width,
+                         height=height,
+                         framerate=framerate,
+                         )
 
     return (score, (duration * framerate) / time_spent)
 
@@ -111,11 +113,7 @@ def get_video_info(input, width, height):
 
 def encode_file(input, output, codec, width, height, bitrate, framerate):
     bitrate_str = f'{bitrate}K'
-    filters = f'fps={framerate},scale={width}x{height}:flags=bicubic'
-    if codec == 'h264':
-        filters += ',format=yuv420p'
-    else:
-        filters += ',format=yuv422p'
+    filters = f'fps={framerate},scale={width}x{height}:flags=bicubic,format=yuv420p'
 
     command = [
         'ffmpeg',
@@ -123,10 +121,10 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
         '-b:v', bitrate_str,
         '-filter:v', filters,
         '-threads', '8',
-        '-an', # This option tells FFmpeg to discard any audio
+        '-an',  # This option tells FFmpeg to discard any audio
         '-y',
         '-loglevel', 'error',
-        '-c:v', # codec will follow
+        '-c:v',  # codec will follow
     ]
 
     # match encoding settings to what libwebrtc uses
@@ -137,7 +135,7 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
         # using libx264 as a substitute
         command.extend([
             'libx264',
-            '-preset', 'fast',
+            '-preset', 'veryfast',
             '-tune', 'zerolatency',
             '-profile:v', 'baseline',
         ])
@@ -190,7 +188,8 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
         if height >= 360:
             command.extend(['-tile-columns', '3'])
     else:
-        raise Exception("Unsupported codec. Please use one of these: 'h264', 'vp8', 'vp9', 'av1'")
+        raise Exception(
+            "Unsupported codec. Please use one of these: 'h264', 'vp8', 'vp9', 'av1'")
 
     command.append(output)
 
@@ -198,6 +197,7 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
 
     if output.stderr:
         raise Exception(f"Error running ffmpeg to encode: {output.stderr}")
+
 
 def compute_vmaf(input, output, width, height, framerate):
     command = [
@@ -233,7 +233,8 @@ def capture_snapshot(input, output):
     output = subprocess.run(command, capture_output=True, text=True)
 
     if output.stderr:
-        raise Exception(f"Error running ffmpeg to create snapshot: {output.stderr}")
+        raise Exception(
+            f"Error running ffmpeg to create snapshot: {output.stderr}")
 
 
 main()
