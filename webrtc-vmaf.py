@@ -120,7 +120,7 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
         '-i', input,
         '-b:v', bitrate_str,
         '-filter:v', filters,
-        '-threads', '8',
+        '-threads', '7',
         '-an',  # This option tells FFmpeg to discard any audio
         '-y',
         '-loglevel', 'error',
@@ -136,9 +136,18 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
         command.extend([
             'libx264',
             '-preset', 'veryfast',
+            '-profile:v', 'baseline',
+        ])
+    elif codec == 'h264_zerolatency':
+        # libwebrtc bundles OpenH264, which isn't available with FFmpeg
+        # using libx264 as a substitute
+        command.extend([
+            'libx264',
+            '-preset', 'veryfast',
             '-tune', 'zerolatency',
             '-profile:v', 'baseline',
         ])
+
     elif codec == 'vp8':
         command.extend([
             'libvpx',
@@ -204,7 +213,7 @@ def compute_vmaf(input, output, width, height, framerate):
         'ffmpeg',
         '-i', input,
         '-i', output,
-        '-filter_complex', f'[0:v]scale={width}:{height}:flags=bicubic,framerate={framerate},setpts=PTS-STARTPTS[ref];[1:v]scale={width}:{height}:flags=bicubic,framerate={framerate},setpts=PTS-STARTPTS[distorted];[distorted][ref]libvmaf=n_threads=8',
+        '-filter_complex', f'[0:v]fps={framerate},scale={width}x{height}:flags=bicubic,settb=AVTB,setpts=PTS-STARTPTS[ref];[1:v]fps={framerate},settb=AVTB,setpts=PTS-STARTPTS[distorted];[distorted][ref]libvmaf=n_threads=8',
         '-f', 'null',
         '-',
     ]
