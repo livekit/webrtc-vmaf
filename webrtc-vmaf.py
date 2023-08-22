@@ -37,7 +37,7 @@ def main():
                                         width=args.width,
                                         height=args.height,
                                         )
-            print(f"  {path.basename(input)}: {score} \tfps: {math.floor(fps)}")
+            print(f"  {path.basename(input)}: {score} \tfps: {math.floor(fps)}\t bitrate: {out_bitrate/1000}kb/s")
             score_total += score
             fps_total += fps
             bitrate_total += out_bitrate
@@ -214,8 +214,6 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
     else:
         raise Exception(
             "Unsupported codec. Please use one of these: 'h264', 'vp8', 'vp9', 'av1'")
-
-    print(f'running command {" ".join(command)}')
 
     command.append(output)
 
