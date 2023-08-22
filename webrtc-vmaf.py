@@ -28,8 +28,9 @@ def main():
         # scores between different files
         score_total = 0
         fps_total = 0
+        bitrate_total = 0
         for input in args.input:
-            score, fps = vmaf_for_input(input,
+            score, fps, out_bitrate = vmaf_for_input(input,
                                         codec=args.codec,
                                         bitrate=bitrate,
                                         framerate=args.framerate,
@@ -39,19 +40,20 @@ def main():
             print(f"  {path.basename(input)}: {score} \tfps: {math.floor(fps)}")
             score_total += score
             fps_total += fps
+            bitrate_total += out_bitrate
         num_inputs = len(args.input)
         avg_fps = 0
         if num_inputs > 0:
             avg_fps = math.floor(fps_total / num_inputs)
         if num_inputs > 1:
-            print(f"average VMAF: {score_total / num_inputs} \tfps: {avg_fps}")
+            print(f"average VMAF: {score_total / num_inputs} \tfps: {avg_fps}\t bitrate: {bitrate_total / num_inputs}")
         else:
-            print(f"VMAF: {score_total} \tfps: {avg_fps}")
+            print(f"VMAF: {score_total} \tfps: {avg_fps}\t bitrate: {bitrate_total/1000}kb/s")
 
 
 def vmaf_for_input(input, codec, bitrate, framerate, width=None, height=None):
     """encodes a version of input with specified encoding and bitrate, returning its VMAF score"""
-    width, height, duration = get_video_info(input, width, height)
+    width, height, duration, _ = get_video_info(input, width, height)
 
     os.makedirs('tmp_vmaf', exist_ok=True)
     basename = path.basename(input)
@@ -79,7 +81,8 @@ def vmaf_for_input(input, codec, bitrate, framerate, width=None, height=None):
                          framerate=framerate,
                          )
 
-    return (score, (duration * framerate) / time_spent)
+    _, _, _, bitrate = get_video_info(video_output, None, None)
+    return (score, (duration * framerate) / time_spent, bitrate)
 
 
 def get_video_info(input, width, height):
@@ -104,23 +107,28 @@ def get_video_info(input, width, height):
     if not height:
         height = output_json['streams'][0]['height']
     duration = '0'
+    bitrate = '0'
     if 'duration' in output_json['streams'][0]:
         duration = output_json['streams'][0]['duration']
     elif 'duration' in output_json['format']:
         duration = output_json['format']['duration']
-    return width, height, float(duration)
+
+    if 'bit_rate' in output_json['format']:
+        bitrate = output_json['format']['bit_rate']
+    return width, height, float(duration), int(bitrate)
 
 
 def encode_file(input, output, codec, width, height, bitrate, framerate):
     bitrate_str = f'{bitrate}K'
     filters = f'fps={framerate},scale={width}x{height}:flags=bicubic,format=yuv420p'
 
+    threads = int((width * height + 640*480-1) / (640*480))
+
     command = [
         'ffmpeg',
         '-i', input,
-        '-b:v', bitrate_str,
         '-filter:v', filters,
-        '-threads', '7',
+        '-threads', f'{threads}',
         '-an',  # This option tells FFmpeg to discard any audio
         '-y',
         '-loglevel', 'error',
@@ -136,7 +144,10 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
         command.extend([
             'libx264',
             '-preset', 'veryfast',
+            '-rc-lookahead', '0',
             '-profile:v', 'baseline',
+            '-maxrate', bitrate_str,
+            '-bufsize', f'{2 * bitrate}K',
         ])
     elif codec == 'h264_zerolatency':
         # libwebrtc bundles OpenH264, which isn't available with FFmpeg
@@ -146,11 +157,13 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
             '-preset', 'veryfast',
             '-tune', 'zerolatency',
             '-profile:v', 'baseline',
+            '-maxrate', bitrate_str,
+            '-bufsize', f'{2 * bitrate}K',
         ])
-
     elif codec == 'vp8':
         command.extend([
             'libvpx',
+            '-b:v', bitrate_str,
             '-minrate', bitrate_str,
             '-maxrate', bitrate_str,
             '-deadline', 'realtime',
@@ -163,6 +176,7 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
     elif codec == 'vp9':
         command.extend([
             'libvpx-vp9',
+            '-b:v', bitrate_str,
             '-minrate', bitrate_str,
             '-maxrate', bitrate_str,
             '-deadline', 'realtime',
@@ -179,6 +193,7 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
     elif codec == 'av1':
         command.extend([
             'libaom-av1',
+            '-b:v', bitrate_str,
             '-usage', 'realtime',
             '-minrate', bitrate_str,
             '-maxrate', bitrate_str,
@@ -199,6 +214,8 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
     else:
         raise Exception(
             "Unsupported codec. Please use one of these: 'h264', 'vp8', 'vp9', 'av1'")
+
+    print(f'running command {" ".join(command)}')
 
     command.append(output)
 
