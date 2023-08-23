@@ -147,7 +147,7 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
             '-rc-lookahead', '0',
             '-profile:v', 'baseline',
             '-maxrate', bitrate_str,
-            '-bufsize', f'{2 * bitrate}K',
+            '-bufsize', f'{bitrate}K',
         ])
     elif codec == 'h264_zerolatency':
         # libwebrtc bundles OpenH264, which isn't available with FFmpeg
@@ -158,7 +158,7 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
             '-tune', 'zerolatency',
             '-profile:v', 'baseline',
             '-maxrate', bitrate_str,
-            '-bufsize', f'{2 * bitrate}K',
+            '-bufsize', f'{bitrate}K',
         ])
     elif codec == 'vp8':
         command.extend([
@@ -172,6 +172,7 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
             '-cpu-used', '-6',
             '-qmax', '52',
             '-qmin', '2',
+            '-bufsize', f'{bitrate}K',
         ])
     elif codec == 'vp9':
         command.extend([
