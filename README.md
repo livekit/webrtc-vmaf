@@ -11,7 +11,7 @@ This presents a dilemma for WebRTC application developers: what bitrates should 
 - takes in a source video, and encodes it using a real-time profile, similar to settings used in WebRTC
 - computes VMAF score comparing the encoded version to the original input
 - performs resizing and framerate adjustments dynamically
-- supports all video codecs used in WebRTC: H.264, VP8, VP9, and AV1
+- supports all video codecs used in WebRTC: H.264, H.265, VP8, VP9, and AV1
 
 ## Installation
 

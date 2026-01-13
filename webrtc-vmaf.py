@@ -98,8 +98,10 @@ def get_video_info(input, width, height):
 
     output = subprocess.run(command, capture_output=True, text=True)
 
-    if output.stderr:
-        raise Exception(f"Error running ffprobe: {output.stderr}")
+    if output.returncode != 0:
+        raise Exception(
+            f"Error running ffprobe (exit {output.returncode}): {output.stderr or output.stdout}"
+        )
 
     output_json = json.loads(output.stdout)
     if not width:
@@ -160,6 +162,15 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
             '-maxrate', bitrate_str,
             '-bufsize', f'{bitrate}K',
         ])
+    elif codec == 'h265':
+        command.extend([
+            'libx265',
+            '-preset', 'veryfast',
+            '-b:v', bitrate_str,
+            '-maxrate', bitrate_str,
+            '-bufsize', f'{bitrate}K',
+            '-x265-params', f'bframes=0:rc-lookahead=0:vbv-maxrate={bitrate}:vbv-bufsize={bitrate}:repeat-headers=1',
+        ])
     elif codec == 'vp8':
         command.extend([
             'libvpx',
@@ -214,14 +225,18 @@ def encode_file(input, output, codec, width, height, bitrate, framerate):
             command.extend(['-tile-columns', '3'])
     else:
         raise Exception(
-            "Unsupported codec. Please use one of these: 'h264', 'vp8', 'vp9', 'av1'")
+            "Unsupported codec. Please use one of these: 'h264', 'h265', 'vp8', 'vp9', 'av1'")
 
     command.append(output)
 
     output = subprocess.run(command, capture_output=True, text=True)
 
-    if output.stderr:
-        raise Exception(f"Error running ffmpeg to encode: {output.stderr}")
+    # Some codecs/libraries (notably x265) write informational logs to stderr.
+    # Treat only non-zero exit codes as failures.
+    if output.returncode != 0:
+        raise Exception(
+            f"Error running ffmpeg to encode (exit {output.returncode}): {output.stderr or output.stdout}"
+        )
 
 
 def compute_vmaf(input, output, width, height, framerate):
@@ -257,9 +272,10 @@ def capture_snapshot(input, output):
 
     output = subprocess.run(command, capture_output=True, text=True)
 
-    if output.stderr:
+    if output.returncode != 0:
         raise Exception(
-            f"Error running ffmpeg to create snapshot: {output.stderr}")
+            f"Error running ffmpeg to create snapshot (exit {output.returncode}): {output.stderr or output.stdout}"
+        )
 
 
 main()
